@@ -1,0 +1,10 @@
+# Exclude Debian packages
+*.deb
+
+# Exclude temporary files
+*.tmp
+*.temp
+
+# Exclude build directories
+build/
+dist/

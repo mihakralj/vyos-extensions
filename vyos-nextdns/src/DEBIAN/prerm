@@ -1,0 +1,23 @@
+#!/bin/bash
+set -euo pipefail
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') | [PRERM] | $*" | tee -a "/var/log/vyos-nextdns_install.log"
+}
+
+log "--- Running NextDNS Pre-Removal ---"
+
+log "Stopping and disabling systemd service..."
+if systemctl is-active --quiet nextdns.service; then
+    systemctl stop nextdns.service
+fi
+if systemctl is-enabled --quiet nextdns.service; then
+    systemctl disable nextdns.service
+fi
+
+log "Removing VyOS configuration symlink..."
+if [[ -L "/usr/libexec/vyos/conf_mode/service_nextdns.py" ]]; then
+    rm -f "/usr/libexec/vyos/conf_mode/service_nextdns.py"
+fi
+
+log "--- NextDNS Pre-Removal Complete ---"

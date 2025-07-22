@@ -1,0 +1,13 @@
+[Unit]
+Description=NextDNS DNS-over-HTTPS Proxy with ad blocking
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/nextdns run -config-file=/config/nextdns/nextdns.conf
+Restart=on-failure
+RestartSec=2s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+Package: vyos-nextdns
+Version: 1.46.0
+Architecture: all
+Maintainer: Miha Kralj <miha.kralj@outlook.com>
+Description: NextDNS client integration for VyOS.
+ This package installs the necessary scripts and services to integrate
+ the NextDNS client with the VyOS configuration system.

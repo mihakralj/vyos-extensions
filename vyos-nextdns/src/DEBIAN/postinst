@@ -1,0 +1,59 @@
+#!/bin/bash
+set -euo pipefail
+
+# --- Configuration ---
+readonly BOOT_SCRIPT_PATH="/config/scripts/vyos-postconfig-bootup.script"
+readonly START_NEXTDNS_PATH="/config/nextdns/start_nextdns.sh"
+readonly BOOT_COMMAND="$START_NEXTDNS_PATH &"
+readonly LOG_FILE="/var/log/vyos-nextdns_install.log"
+
+# --- Functions ---
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') | [POSTINST] | $*" | tee -a "$LOG_FILE"
+}
+
+add_boot_script_entry() {
+    log "Ensuring boot script entry exists..."
+    mkdir -p "$(dirname "$BOOT_SCRIPT_PATH")"
+    
+    if [[ ! -f "$BOOT_SCRIPT_PATH" ]]; then
+        log "Creating new boot script: $BOOT_SCRIPT_PATH"
+        echo "#!/bin/bash" > "$BOOT_SCRIPT_PATH"
+        chmod +x "$BOOT_SCRIPT_PATH"
+    fi
+
+    if ! grep -qF -- "$BOOT_COMMAND" "$BOOT_SCRIPT_PATH"; then
+        log "Adding command to boot script."
+        echo "$BOOT_COMMAND" >> "$BOOT_SCRIPT_PATH"
+    else
+        log "Command already exists in boot script."
+    fi
+}
+
+# --- Main Execution ---
+main() {
+    log "--- Running NextDNS Post-Installation ---"
+    
+    # Create symlink for VyOS configuration script
+    log "Creating symlink for VyOS configuration script..."
+    mkdir -p /usr/libexec/vyos/conf_mode
+    ln -sf /config/nextdns/service_nextdns.py /usr/libexec/vyos/conf_mode/service_nextdns.py
+    
+    # Set proper permissions for VyOS configuration script
+    log "Setting permissions for VyOS configuration script..."
+    chmod +x /config/nextdns/service_nextdns.py
+    
+    add_boot_script_entry
+    
+    log "Performing initial setup..."
+    if [[ -f "$START_NEXTDNS_PATH" ]]; then
+        "$START_NEXTDNS_PATH"
+    else
+        log "ERROR: $START_NEXTDNS_PATH not found!"
+        exit 1
+    fi
+
+    log "--- NextDNS Post-Installation Complete ---"
+}
+
+main "$@"

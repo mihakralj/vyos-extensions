@@ -1,0 +1,57 @@
+#!/bin/bash
+set -euo pipefail
+
+# --- Configuration ---
+readonly SYSTEMD_SERVICE_PATH="/etc/systemd/system/nextdns.service"
+readonly VYOS_NODES_DIR="/opt/vyatta/share/vyatta-cfg/templates/service/nextdns"
+readonly LOG_FILE="/var/log/vyos-nextdns_install.log"
+readonly BOOT_SCRIPT_PATH="/config/scripts/vyos-postconfig-bootup.script"
+readonly START_NEXTDNS_PATH="/config/nextdns/start_nextdns.sh"
+readonly BOOT_COMMAND="$START_NEXTDNS_PATH &"
+
+# --- Functions ---
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') | [POSTRM] | $*" | tee -a "$LOG_FILE"
+}
+
+remove_service_file() {
+    if [[ -f "$SYSTEMD_SERVICE_PATH" ]]; then
+        log "Removing systemd service file: $SYSTEMD_SERVICE_PATH"
+        rm -f "$SYSTEMD_SERVICE_PATH"
+    fi
+    systemctl daemon-reload
+}
+
+remove_vyos_nodes() {
+    if [[ -d "$VYOS_NODES_DIR" ]]; then
+        log "Removing VyOS nodes: $VYOS_NODES_DIR"
+        rm -rf "$VYOS_NODES_DIR"
+        systemctl restart vyos-configd
+    fi
+}
+
+remove_boot_script_entry() {
+    log "Removing boot script entries..."
+    if [[ -f "$BOOT_SCRIPT_PATH" ]]; then
+        sed -i '\|/config/nextdns/start_nextdns.sh|d' "$BOOT_SCRIPT_PATH"
+        log "Removed all start_nextdns.sh commands from boot script."
+    fi
+}
+
+# --- Main Execution ---
+main() {
+    log "--- Starting NextDNS VyOS Integration Uninstall ---"
+    
+    remove_service_file
+    remove_vyos_nodes
+    remove_boot_script_entry
+
+    if [ "$1" = "purge" ]; then
+        log "Purging configuration..."
+        rm -rf /config/nextdns
+    fi
+
+    log "--- NextDNS VyOS Integration Uninstall Complete ---"
+}
+
+main "$@"
