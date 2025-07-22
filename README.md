@@ -4,7 +4,7 @@ A collection of packages, plugins, and extensions for VyOS - stuff added for fun
 
 ## Overview
 
-VyOS is a powerful network operating system, but its configuration schema is semi-compiled during build time and doesn't allow for arbitrary configuration nodes during runtime. This repository provides crafted packages that work around these limitations to integrate popular network services and tools into VyOS.
+VyOS is a powerful network operating system, but its configuration schema is semi-compiled during build time and doesn't allow for arbitrary configuration nodes during runtime. This repository provides crafted packages that work around these limitations and extend VyOS functionality with new services and features.
 
 ## Current Packages
 
