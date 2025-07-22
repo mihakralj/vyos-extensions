@@ -15,10 +15,10 @@ This package has several components:
 ## Installation
 
 1. Download `nextdns_<version>_vyos.deb` to VyOS
-2. Install with `sudo dpkg -i nextdns_<version>_vyos.deb`
-        Check: `nextdns version` and `nextdns status` (should be stopped if there is no profile set)
-        Check: `sudo systemctl status nextdns`
-        Check: `sudo journalctl -u nextdns -n 50`
+2. Install with `sudo dpkg -i nextdns_<version>_vyos.deb`  
+        Check: `nextdns version` and `nextdns status` (should be stopped if there is no profile set)  
+        Check: `sudo systemctl status nextdns`  
+        Check: `sudo journalctl -u nextdns -n 50`  
 
 ## Configuration
 
@@ -26,21 +26,21 @@ This package has several components:
 2. Add desired configuration nodes with `set service nextdns`
 (`profile` node is required - get it at [NextDNS portal](https://my.nextdns.io))
 
-`bogus-priv`            Block private IP reverse lookups, default `true`
-`cache-max-age`         Maximum cache entry age
-`cache-size`            Set DNS cache size, default 0 (disabled)
-`debug`                 Enable debug logging
-`discovery-dns`         DNS server for local network discovery
-`forwarder`             DNS forwarder configuration
-`listen`                Listen address for UDP DNS proxy server, default 53
-`log-queries`           Log DNS queries
-`max-inflight-requests` Maximum number of inflight requests.
-`max-ttl`               Maximum TTL value for clients
-`mdns`                  mDNS handling mode
-`profile`               NextDNS profile ID
-`report-client-info`    Embed client information with queries
-`timeout`               Set DNS query timeout
-`use-hosts`             Use system hosts file for DNS resolution
+- `bogus-priv`            Block private IP reverse lookups, default `true`
+- `cache-max-age`         Maximum cache entry age
+- `cache-size`            Set DNS cache size, default 0 (disabled)
+- `debug`                 Enable debug logging
+- `discovery-dns`         DNS server for local network discovery
+- `forwarder`             DNS forwarder configuration
+- `listen`                Listen address for UDP DNS proxy server, default 53
+- `log-queries`           Log DNS queries
+- `max-inflight-requests` Maximum number of inflight requests.
+- `max-ttl`               Maximum TTL value for clients
+- `mdns`                  mDNS handling mode
+- `profile`               NextDNS profile ID
+- `report-client-info`    Embed client information with queries
+- `timeout`               Set DNS query timeout
+- `use-hosts`             Use system hosts file for DNS resolution
 
 Once you run `commit`, nextdns.conf will be generated and NextDNS service will resstart.
 
@@ -74,12 +74,20 @@ Or can keep using own PowerDNS resolver to respond on defauly port :53 and use N
 - `set service dns forwarding name-server 127.0.0.1:9053`
 - `set service dns forwarding name-server ::9053`
 
-## Notes and rants
+## Rant
 
-VyOS is not an open system for community developers - its configuration schema is semi-compiled during build time and does not allow to add arbitrary configuration nodes during runtime. If donfig node is not in cache, vyos config will throw a fit. And cache is rather large, compact and not tinker-friendly: `/usr/lib/live/mount/rootfs/2025.07.21-0022-rolling.squashfs/usr/lib/python3/dist-packages/vyos/xml_ref/cache.py` Therefore package like `nextdns` cannot use the standard VyOS configuration system as its nodes were not pre-compiled in the cache.py - and all VyOS validations of nextdns node system will fail. But there is a workaround...
+VyOS is not an open system for community developers - its configuration schema is semi-compiled during build time and does not allow to add arbitrary configuration nodes during runtime. If donfig node is not in cache, vyos config will throw a fit. And cache is rather large, compact and not tinker-friendly - check it for yourself on runnint vyos:
 
-I decided to completely ignore built-in configuration validation system that VyOS provides. Instead, vyos-nextdns generates its own raw nodes.def structure directly, as VyOS is not shipping with .xml schemas or compilers (see direct generation of nodes in `generate_nodes.sh`). Nodes structure and validations are all tested thoroughly, but they are *very fragile* as they cannot rely on VyOS schema or validation system.
+`/usr/lib/live/mount/rootfs/2025.07.21-0022-rolling.squashfs/usr/lib/python3/dist-packages/vyos/xml_ref/cache.py` 
 
-How do we get configuration information out from VyOS when we want to generate nextdns.conf? Default python helpers that VyOS uses do not work. So, we use CLI command `cli-shell-api` and parse its output to generate nextdns.conf configuration. This is not a clean solution, but it works.
+Therefore community packages cannot use the standard VyOS configuration system as its nodes are not pre-compiled in the `cache.py` - and all VyOS validations of node system will fail on check. But there is a workaround...
 
-`eval "$(/usr/bin/cli-shell-api getEditResetEnv)" && /usr/bin/cli-shell-api showCfg service nextdns'`
+We can completely ignore built-in configuration validation system that VyOS provides. Instead, we can generate own raw `nodes.def` structure directly, as VyOS is not shipping with `.xml` schemas or compilers (see direct generation of nodes in `generate_nodes.sh` of this package). Nodes structure and validations are all tested thoroughly, but they are *very fragile* as they do not (cannot) rely on VyOS schema or validation system. You don't let me use yours? We'll build our own! 😎
+
+How do we get configuration information out from VyOS when we want to generate `nextdns.conf` or any other service configuration? Default python helpers that VyOS uses do not work - because, yeah, WE ARE NOT IN THE PRE_BAKED SCHEMA. 
+
+But we use CLI command `cli-shell-api` instead and parse its output to generate required configuration. This is not a clean solution, but it works. For nextdns I opted to avoid Jinja2 templates as well, as nextdns.conf is very simple to construct. Here is an actual command that pulls configuration from VyOS:
+
+```bash
+eval "$(/usr/bin/cli-shell-api getEditResetEnv)" && /usr/bin/cli-shell-api showCfg service nextdns'
+```
