@@ -59,3 +59,5 @@ To completely remove all configuration files, use the purge command:
 ## Usage
 
 Once installed and configured, your VyOS router will be a node on your Tailscale network. You can use it as a gateway to your local network by advertising routes and enabling `snat-subnet-routes`. You can also use it as an exit node to route traffic from other devices through your VyOS router's internet connection.
+
+For detailed instructions on how to configure your VyOS firewall and NAT rules to work with Tailscale, please see the [Network Integration Guide](network_setup.md).
