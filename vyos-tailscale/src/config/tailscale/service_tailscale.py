@@ -62,10 +62,8 @@ def get_config_from_cli():
 
 def generate_cli_args(config):
     """Generate tailscale CLI arguments from config"""
-    if 'auth-key' not in config:
-        return ['logout']
-
-    args = ['login']
+    # The 'up' command can be used to both login and update an existing session.
+    args = ['up']
 
     if 'ignore-dns' in config:
         args.append('--accept-dns=false')
@@ -120,17 +118,31 @@ def generate_cli_args(config):
 if __name__ == "__main__":
     try:
         config = get_config_from_cli()
-        args = generate_cli_args(config)
 
-        # Run the login or logout command
-        command = ['sudo', '/config/tailscale/tailscale'] + args
-        result = subprocess.run(command, capture_output=True, text=True)
+        # If no config, do nothing and exit gracefully
+        if not config:
+            print("No Tailscale configuration found, skipping.")
+            sys.exit(0)
 
-        # If the command failed, print the error and exit
-        if result.returncode != 0:
-            if result.stderr:
-                print(result.stderr, file=sys.stderr)
-            sys.exit(result.returncode)
+        # If auth-key is missing, attempt a logout, then a down, ignoring errors.
+        if 'auth-key' not in config:
+            print("Auth-key not found. Attempting to log out and bring connection down.")
+            logout_result = subprocess.run(['sudo', '/config/tailscale/tailscale', 'logout'], capture_output=True, text=True)
+            # If logout failed (e.g., already logged out), try bringing the connection down.
+            if logout_result.returncode != 0:
+                subprocess.run(['sudo', '/config/tailscale/tailscale', 'down'], capture_output=True, text=True)
+            # Exit gracefully after cleanup attempt
+            sys.exit(0)
+        else:
+            # Otherwise, run 'up' with the current config
+            args = generate_cli_args(config)
+            command = ['sudo', '/config/tailscale/tailscale'] + args
+            result = subprocess.run(command, capture_output=True, text=True)
+            # If the command failed, print the error and exit
+            if result.returncode != 0:
+                if result.stderr:
+                    print(result.stderr, file=sys.stderr)
+                sys.exit(result.returncode)
 
         # Run the status command and print the output
         status_command = ['sudo', '/config/tailscale/tailscale', 'status']

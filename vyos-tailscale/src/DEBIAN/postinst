@@ -15,7 +15,7 @@ log() {
 add_boot_script_entry() {
     log "Ensuring boot script entry exists..."
     mkdir -p "$(dirname "$BOOT_SCRIPT_PATH")"
-    
+
     if [[ ! -f "$BOOT_SCRIPT_PATH" ]]; then
         log "Creating new boot script: $BOOT_SCRIPT_PATH"
         echo "#!/bin/bash" > "$BOOT_SCRIPT_PATH"
@@ -33,18 +33,18 @@ add_boot_script_entry() {
 # --- Main Execution ---
 main() {
     log "--- Running Tailscale Post-Installation ---"
-    
+
     # Create symlink for VyOS configuration script
     log "Creating symlink for VyOS configuration script..."
     mkdir -p /usr/libexec/vyos/conf_mode
     ln -sf /config/tailscale/service_tailscale.py /usr/libexec/vyos/conf_mode/service_tailscale.py
-    
+
     # Set proper permissions for VyOS configuration script
     log "Setting permissions for VyOS configuration script..."
     chmod +x /config/tailscale/service_tailscale.py
-    
+
     add_boot_script_entry
-    
+
     log "Performing initial setup..."
     if [[ -f "$START_TAILSCALE_PATH" ]]; then
         "$START_TAILSCALE_PATH"
