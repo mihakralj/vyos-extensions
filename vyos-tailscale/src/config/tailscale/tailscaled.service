@@ -1,0 +1,13 @@
+[Unit]
+Description=Tailscale node agent
+Documentation=https://tailscale.com/kb/
+Wants=network-pre.target
+After=network-pre.target
+
+[Service]
+EnvironmentFile=/config/tailscale/tailscaled.env
+ExecStart=/usr/sbin/tailscaled --state=${STATE_DIR} --socket=${SOCKET_PATH} --port=${PORT}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

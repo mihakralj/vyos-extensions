@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') | [PRERM] | $*" | tee -a "/var/log/vyos-tailscale_install.log"
+}
+
+log "--- Running Tailscale Pre-Removal ---"
+
+if [ -x /config/tailscale/remove_tailscale.sh ]; then
+    log "Executing remove_tailscale.sh..."
+    /config/tailscale/remove_tailscale.sh
+fi
+
+log "Removing VyOS configuration symlink..."
+if [[ -L "/usr/libexec/vyos/conf_mode/service_tailscale.py" ]]; then
+    rm -f "/usr/libexec/vyos/conf_mode/service_tailscale.py"
+fi
+
+log "--- Tailscale Pre-Removal Complete ---"
