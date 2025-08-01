@@ -1,0 +1,48 @@
+#!/bin/bash
+set -euo pipefail
+
+# --- Configuration ---
+readonly SYSTEMD_SERVICE_PATH="/etc/systemd/system/tailscaled.service"
+readonly VYOS_NODES_DIR="/opt/vyatta/share/vyatta-cfg/templates/service/tailscale"
+readonly LOG_FILE="/var/log/vyos-tailscale_install.log"
+readonly BOOT_SCRIPT_PATH="/config/scripts/vyos-postconfig-bootup.script"
+readonly START_TAILSCALE_PATH="/config/tailscale/start_tailscale.sh"
+readonly BOOT_COMMAND="$START_TAILSCALE_PATH &"
+
+# --- Functions ---
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') | [POSTRM] | $*" | tee -a "$LOG_FILE"
+}
+
+remove_vyos_nodes() {
+    if [[ -d "$VYOS_NODES_DIR" ]]; then
+        log "Removing VyOS nodes: $VYOS_NODES_DIR"
+        rm -rf "$VYOS_NODES_DIR"
+        systemctl restart vyos-configd
+    fi
+}
+
+remove_boot_script_entry() {
+    log "Removing boot script entries..."
+    if [[ -f "$BOOT_SCRIPT_PATH" ]]; then
+        sed -i '\|/config/tailscale/start_tailscale.sh|d' "$BOOT_SCRIPT_PATH"
+        log "Removed all start_tailscale.sh commands from boot script."
+    fi
+}
+
+# --- Main Execution ---
+main() {
+    log "--- Starting Tailscale VyOS Integration Uninstall ---"
+
+    remove_vyos_nodes
+    remove_boot_script_entry
+
+    if [ "$1" = "purge" ]; then
+        log "Purging configuration..."
+        rm -rf /config/tailscale
+    fi
+
+    log "--- Tailscale VyOS Integration Uninstall Complete ---"
+}
+
+main "$@"

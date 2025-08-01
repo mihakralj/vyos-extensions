@@ -1,0 +1,7 @@
+Package: vyos-tailscale
+Version: 1.76.1
+Architecture: all
+Maintainer: Miha Kralj <miha.kralj@outlook.com>
+Description: Tailscale VPN client integration for VyOS.
+ This package installs the necessary scripts and services to integrate
+ the Tailscale VPN client with the VyOS configuration system.
